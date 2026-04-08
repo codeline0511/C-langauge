@@ -1,3 +1,4 @@
+
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <time.h>
@@ -14,7 +15,7 @@ typedef struct icecream {
     int number;
     char name[15];
     int stock;
-} Icecream;  
+} Icecream;
 
 typedef struct stack {
     int* icecream_number;
@@ -23,9 +24,9 @@ typedef struct stack {
 } Stack;
 
 typedef struct customer {
-    int cup_size;   
+    int cup_size;
     int order[MAX_CUPSIZE];
-    Stack *icecream_cup;
+    Stack* icecream_cup;
 } Customer;
 
 typedef struct queue {
@@ -56,11 +57,19 @@ Icecream* create_icecream()
     return ice;
 }
 
+void init_cup(Stack* icecream_cup)
+{
+    icecream_cup->capacity = MAX_CUPSIZE;
+    icecream_cup->top = -1;
+    icecream_cup->icecream_number = (int*)malloc(icecream_cup->capacity * sizeof(int));
+}
+
 Customer* create_customer()
 {
     Customer* cus = (Customer*)malloc(sizeof(Customer));
     memset(cus, 0, sizeof(Customer));
     cus->icecream_cup = (Stack*)malloc(sizeof(Stack));
+    init_cup(cus->icecream_cup);
     return cus;
 }
 
@@ -70,13 +79,6 @@ typedef struct owner {
     int price_of_cupsize[MAX_CUPSIZE];
     Queue* q;
 } Owner;
-
-void init_cup(Stack* icecream_cup)
-{
-    icecream_cup->capacity = MAX_CUPSIZE;
-    icecream_cup->top = -1;
-    icecream_cup->icecream_number = (int*)malloc(icecream_cup->capacity * sizeof(int));
-}
 
 int is_full(Stack* icecream_cup)
 {
@@ -111,7 +113,7 @@ void init_queue(Queue* q)
 
 int is_empty_queue(Queue* q)
 {
-    return (q->front == q->rear); // ¿¹¿Ü ¹ß»ı
+    return (q->front == q->rear); // ì˜ˆì™¸ ë°œìƒ
 }
 
 int is_full_queue(Queue* q)
@@ -151,7 +153,7 @@ void table_init()
             char name[15];
             ice->number = ice_num++;
             ice->stock = rand() % 5;
-            printf("Áø¿­ÇÒ ¾ÆÀÌ½ºÅ©¸²¸íÀ» ÀÔ·ÂÇÏ¼¼¿ä:");
+            printf("ì§„ì—´í•  ì•„ì´ìŠ¤í¬ë¦¼ëª…ì„ ì…ë ¥í•˜ì„¸ìš”:");
             scanf("%s", name);
             strcpy(ice->name, name);
             icecream_tb[i][j] = ice;
@@ -177,7 +179,10 @@ void transposed_icecream_tb()
             table[j][i] = icecream_tb[i][j];
         }
     }
+    for (i = 0; i < ROW; i++)
+        free(icecream_tb[i]);
     free(icecream_tb);
+
     icecream_tb = table;
     for (i = 0; i < col; i++)
     {
@@ -209,23 +214,23 @@ int delivery_order(Customer* cus)
     int i, ice_num;
     int penalty = 0;
 
-    for (i = cus->cup_size; i--; i > 0)
+    for (i = cus->cup_size - 1; i >= 0; i--)
     {
         ice_num = pop(cus->icecream_cup);
         if (ice_num == -1)
         {
-            printf("°í°´:¿Ö ÁÖ¹®ÇÑ ¾ÆÀÌ½ºÅ©¸²À» ´Ù ¾ÈÁÖ´Â°Å¾ß!!!\n");
+            printf("ê³ ê°:ì™œ ì£¼ë¬¸í•œ ì•„ì´ìŠ¤í¬ë¦¼ì„ ë‹¤ ì•ˆì£¼ëŠ”ê±°ì•¼!!!\n");
             penalty++;
         }
         else
         {
             if (ice_num == cus->order[i])
             {
-                printf("°í°´:ÁÖ¹®ÇÑ ¼ø¼­´ë·Î ½×¾ÆÁá³×.\n");
+                printf("ê³ ê°:ì£¼ë¬¸í•œ ìˆœì„œëŒ€ë¡œ ìŒ“ì•„ì¤¬ë„¤.\n");
             }
             else
             {
-                printf("°í°´:³»°¡ ÁÖ¹®ÇÑ ¾ÆÀÌ½ºÅ©¸²ÀÌ ¾Æ´ÏÀİ¾Æ!!!!!");
+                printf("ê³ ê°:ë‚´ê°€ ì£¼ë¬¸í•œ ì•„ì´ìŠ¤í¬ë¦¼ì´ ì•„ë‹ˆì–ì•„!!!!!\n");
                 penalty++;
             }
         }
@@ -234,18 +239,18 @@ int delivery_order(Customer* cus)
     if ((cus->icecream_cup->top) > -1)
     {
         penalty += ((cus->icecream_cup->top) + 1);
-        printf("°í°´:¿Ö ³»°¡ ½ÃÅ²°Íº¸´Ù ´õ ÁÖ´Â°ÅÁö?");
+        printf("ê³ ê°:ì™œ ë‚´ê°€ ì‹œí‚¨ê²ƒë³´ë‹¤ ë” ì£¼ëŠ”ê±°ì§€?\n");
     }
     return penalty;
 }
 
 void cal_sales(Owner* ice_owner, int cupsize, int penalty)
 {
-    int income = ice_owner->price_of_cupsize[cupsize];
+    int income = ice_owner->price_of_cupsize[cupsize - 1];
     income -= penalty;
     ice_owner->total_income = ice_owner->total_income + income;
 
-    printf("³ª:ÀÌ¹øÁÖ¹®À¸·Î %d¿ø ÃÑ %d¿ø ¹ú¾ú´Ù\n", income, ice_owner->total_income);
+    printf("ë‚˜:ì´ë²ˆì£¼ë¬¸ìœ¼ë¡œ %dì› ì´ %dì› ë²Œì—ˆë‹¤\n", income, ice_owner->total_income);
 }
 
 int prepare_order(Owner* ice_owner)
@@ -256,19 +261,19 @@ int prepare_order(Owner* ice_owner)
         return -1;
     }
     Stack* icecream_cup = cus->icecream_cup;
+    free(icecream_cup->icecream_number);
     init_cup(icecream_cup);
 
-    printf("start prepare order");
-    init_cup(icecream_cup);
+    printf("start prepare order\n");
 
     int cupsize = -1;
-    printf("³ª:°í°´´ÔÀÌ °í¸¥ ÄÅ »çÀÌÁî°¡ ¹¹¿´Áö?\n");
+    printf("ë‚˜:ê³ ê°ë‹˜ì´ ê³ ë¥¸ ì»µ ì‚¬ì´ì¦ˆê°€ ë­ì˜€ì§€?\n");
     scanf("%d", &cupsize);
 
     int i, choice;
     for (i = 0; i < cupsize; i++)
     {
-        printf("³ª:¸î¹ø ¾ÆÀÌ½ºÅ©¸²À» ½×¾Æ¾ßÇÏÁö?\n");
+        printf("ë‚˜:ëª‡ë²ˆ ì•„ì´ìŠ¤í¬ë¦¼ì„ ìŒ“ì•„ì•¼í•˜ì§€?\n");
         scanf("%d", &choice);
         push(choice, icecream_cup);
     }
@@ -286,10 +291,10 @@ int get_order(Owner* ice_owner)
     int col = COL;
 
     Sleep(1000); // Ccompiler sleep(1);
-    printf("»çÀå: °í°´´Ô ÁÖ¹®¹Ş°Ú½À´Ï´Ù.\n");
+    printf("ì‚¬ì¥: ê³ ê°ë‹˜ ì£¼ë¬¸ë°›ê² ìŠµë‹ˆë‹¤.\n");
     cus->cup_size = (rand() % MAX_CUPSIZE) + 1;
 
-    printf("°í°´: Àú cupsize %dÀ¸·Î ", cus->cup_size);
+    printf("ê³ ê°: ì € cupsize %dìœ¼ë¡œ ", cus->cup_size);
 
     for (i = 0; i < cus->cup_size; i++)
     {
@@ -308,10 +313,9 @@ int get_order(Owner* ice_owner)
         printf("%s, ", icecream_tb[row][col]->name);
     }
 
-    printf("¼ø¼­·Î ½×¾ÆÁÖ¼¼¿ä.\n\n");
-    prepare_order(cus->icecream_cup);
-    int penalty = delivery_order(cus);
-    cal_sales(ice_owner, cus->cup_size, penalty);
+    printf("ìˆœì„œë¡œ ìŒ“ì•„ì£¼ì„¸ìš”.\n\n");
+    //int penalty = delivery_order(cus);
+    //cal_sales(ice_owner, cus->cup_size, penalty);
 
     int ret = enqueue(ice_owner->q, cus);
     if (ret == -1)
@@ -342,19 +346,27 @@ int main(void)
     }
     printf("\n");
 
-    for (i = 0; i < MAX_CUSTOMER_SIZE + 1; i++) 
+    for (i = 0; i < MAX_CUSTOMER_SIZE + 1; i++)
     {
         Sleep(1000);
-        if (get_order(&ice_owner) == -1)
-            printf("´õÀÌ»ó ÁÖ¹®À» ¹ŞÀ» ¼ö ¾ø¾î¿ä. ´Ù½Ã Ã£¾Æ¿ÍÁÖ¼¼¿ä.\n");
+        if (get_order(&ice_owner) == -1) 
+        {
+            printf("ë”ì´ìƒ ì£¼ë¬¸ì„ ë°›ì„ ìˆ˜ ì—†ì–´ìš”. ë‹¤ì‹œ ì°¾ì•„ì™€ì£¼ì„¸ìš”.\n");
+            break;
+        }
+        get_order(&ice_owner);
     }
     for (i = 0; i < MAX_CUSTOMER_SIZE + 1; i++)
     {
-        if (prepare_order(&ice_owner) == -1)
-            printf("µé¾î¿Â ÁÖ¹®ÀÌ ´õ ÀÌ»ó ¾ø¾î¿ä.\n");
+        if (prepare_order(&ice_owner) == -1) 
+        {
+            printf("ë“¤ì–´ì˜¨ ì£¼ë¬¸ì´ ë” ì´ìƒ ì—†ì–´ìš”.\n");
+            break;
+        }
+            
     }
 
-    printf("´Ü¼Ó¿ø ¶¹´Ù!\n");
+    printf("ë‹¨ì†ì› ë–´ë‹¤!\n");
     transposed_icecream_tb();
 
     //cal_sales(&ice_owner);
