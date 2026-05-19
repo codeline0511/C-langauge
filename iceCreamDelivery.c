@@ -7,9 +7,11 @@
 
 #define ROW 2
 #define COL 3
-#define MAX_CUPSIZE 3
-#define MAX_CUSTOMER_SIZE 5
-#define MAX_DELIVERY_COUNT 5
+#define MAX_CUPSIZE 5
+#define MAX_CUSTOMER_SIZE 8
+#define MAX_DELIVERY_COUNT 4
+#define MAX_COOM_BINGSU 3
+#define NUM_OF_INGREDIENT 7
 
 typedef struct icecream {
     int number;
@@ -29,6 +31,10 @@ typedef struct customer {
     int vip;
     int onlyhome;
     int order_num;
+    int ingre_count;
+    int bingsu_menu;
+    char order_bingsu[NUM_OF_INGREDIENT][100];
+    char bingsu_make[NUM_OF_INGREDIENT][100];
     Stack* icecream_cup;
 } Customer;
 
@@ -46,6 +52,13 @@ typedef struct rider {
     int count;
     ListNode* tail;
 } Rider;
+
+typedef struct TreeNode {
+    char name[100];
+    struct TreeNode* left, * right;
+}TreeNode;
+
+TreeNode* bingsu_num;
 
 Icecream*** icecream_tb;
 int reverse;
@@ -83,6 +96,7 @@ Customer* create_customer()
     Customer* cus = (Customer*)malloc(sizeof(Customer));
     memset(cus, 0, sizeof(Customer));
     cus->icecream_cup = (Stack*)malloc(sizeof(Stack));
+    cus->ingre_count = 0;
     init_cup(cus->icecream_cup);
     return cus;
 }
@@ -383,7 +397,14 @@ int prepare_order(Owner* ice_owner)
         push(choice, icecream_cup);
     }
 
-    ice_owner->tail = insert_last(ice_owner->tail, cus);
+    if (cus->vip == 1) 
+    { 
+        ice_owner->tail = insert_first(ice_owner->tail, cus);
+    }
+    else 
+    { 
+        ice_owner->tail = insert_last(ice_owner->tail, cus); 
+    }
     //int penalty = delivery_order(cus);
     //cal_sales(ice_owner, cus->cup_size, penalty);
     return 0;
@@ -391,7 +412,7 @@ int prepare_order(Owner* ice_owner)
 
 int get_order(Owner* ice_owner)
 {
-    if (is_full_queue(ice_owner->q)) return -1;
+    if (is_full_queue(ice_owner->q)) { return -1; }
 
     Customer* cus = create_customer();
     cus->order_num = global_order_num++;
@@ -432,24 +453,36 @@ int get_order(Owner* ice_owner)
     return 0;
 }
 
-ListNode* search_list(ListNode* tail)
+ListNode* search_list(ListNode* tail, int vip)
 {
+    if (tail == NULL)
+    {
+        return NULL;
+    }
+
     ListNode* prev = tail;
 
     do
     {
-        if (prev == NULL) return NULL;
-        if (prev->link->cus->onlyhome == 0) return prev;
+        Customer* target = prev->link->cus;
+
+        if (target->onlyhome == 0 &&
+            target->vip == vip)
+        {
+            return prev;
+        }
+
         prev = prev->link;
+
     } while (prev != tail);
+
     return NULL;
 }
-
 int rider_pickup(Owner* ice_owner, Rider* rider)
 {
     Customer* cus = delete_first(&(ice_owner->tail));
     ListNode* prev;
-    if (cus == NULL) return -1;
+    if (cus == NULL) { return -1; }
 
     rider->tail = insert_last(rider->tail, cus);
     rider->count++;
@@ -460,7 +493,7 @@ int rider_pickup(Owner* ice_owner, Rider* rider)
         printf("앗! 한집배달이 아니네!\n");
         while (rider->count < MAX_DELIVERY_COUNT)
         {
-            prev = search_list(ice_owner->tail);
+            prev = search_list(ice_owner->tail, cus->vip);
             if (prev != NULL)
             {
                 cus = delete(&(ice_owner->tail), prev);
@@ -468,7 +501,7 @@ int rider_pickup(Owner* ice_owner, Rider* rider)
                 rider->count++;
                 printf("하나 더 픽업 진행!\n");
             }
-            else break;
+            else { break; }
         }
     }
     return 1;
@@ -487,7 +520,7 @@ void delivery__pickup_order(Owner* ice_owner, Rider* rider)
         printf("------------------------------------------------------------------------------\n");
         printf("[vip %d onlyhome %d]주문번호 %d 고객님 아이스크림 배달왔습니다.\n", cus->vip, cus->onlyhome, cus->order_num);
 
-        for (i = cus->cup_size - 1; i >= 0; i--)
+        for (i = cus->cup_size; i--; i>0)
         {
             ice_num = pop(cus->icecream_cup);
             if (ice_num == -1)
@@ -497,7 +530,7 @@ void delivery__pickup_order(Owner* ice_owner, Rider* rider)
             }
             else
             {
-                if (ice_num == cus->order[i]) { printf("고객:감사합니다!\n");}
+                if (ice_num == cus->order[i]) { printf("고객:감사합니다!\n"); }
                 else
                 {
                     printf("고객:내가 주문한 아이스크림이 아니잖아!!!\n");
